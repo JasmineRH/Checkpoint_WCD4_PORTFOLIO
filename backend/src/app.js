@@ -1,60 +1,114 @@
-// import some node modules for later
-
-const fs = require("node:fs");
-const path = require("node:path");
-
-// create express app
+/*
+require("dotenv").config();
 
 const express = require("express");
 
 const app = express();
-
-// use some application-level middlewares
-
-app.use(express.json());
-
 const cors = require("cors");
+const corsOptions = require("../config/corsConfig");
 
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
-    optionsSuccessStatus: 200,
-  })
-);
+const connection = require("../db-config");
 
-// import and mount the API routes
+const port = 8001;
 
-const router = require("./router");
+app.use(cors(corsOptions));
+// middlewares (body se transforme en json)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(router);
+/* Connexion à la BDD */
+/*
+connection.connect((err) => {
+  if (err) {
+    console.error("error connecting DB : ", err.stack);
+  } else {
+    console.log("DB connected as id ", connection.threadId);
+  }
+});
 
-// serve the `backend/public` folder for public resources
+app.get("/", (req, res) => {
+  res.send("Hello World !");
+});
 
-app.use(express.static(path.join(__dirname, "../public")));
-
-// serve REACT APP
-
-const reactIndexFile = path.join(
-  __dirname,
-  "..",
-  "..",
-  "frontend",
-  "dist",
-  "index.html"
-);
-
-if (fs.existsSync(reactIndexFile)) {
-  // serve REACT resources
-
-  app.use(express.static(path.join(__dirname, "..", "..", "frontend", "dist")));
-
-  // redirect all requests to the REACT index file
-
-  app.get("*", (req, res) => {
-    res.sendFile(reactIndexFile);
+// Route pour les profils
+app.get("/api/profile", (req, res) => {
+  connection.query("SELECT * FROM profile", (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.sendStatus(500);
+    }
+    res.json(result);
   });
-}
+});
 
-// ready to export
+app.get("/api/profile/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) {
+    return res.sendStatus(422);
+  }
+  connection.query("SELECT * FROM profile WHERE id=?", [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.sendStatus(500);
+    }
+    if (result.length === 0) {
+      return res.sendStatus(404);
+    }
+    res.json(result[0]);
+  });
+});
+
+app.post("/api/profile", (req, res) => {
+  const { bio, linksocialmedia } = req.body;
+
+  // Attention : ordre des éléments important (bio, link...)
+  connection.query(
+    "INSERT INTO profile (bio, linksocialmedia) VALUES (?, ?)",
+    [bio, linksocialmedia],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.sendStatus(500);
+      }
+      const id = result.insertId;
+      const newProfile = {
+        bio,
+        linksocialmedia,
+      };
+      res.status(201).json(newProfile);
+    }
+  );
+});
+
+app.put("/api/profile/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  connection.query(
+    "UPDATE profile SET ? WHERE id=?",
+    [req.body, id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.sendStatus(500);
+      }
+      res.sendStatus(204);
+    }
+  );
+});
+
+app.delete("/api/profile/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  connection.query("DELETE FROM profile WHERE id=?", [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.sendStatus(500);
+    }
+    res.sendStatus(204); // 204: pas d'éléments à renvoyer = tout est ok
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port: ${port}`);
+});
 
 module.exports = app;
+*/

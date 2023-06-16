@@ -1,3 +1,4 @@
+/*
 const models = require("../models");
 
 const browse = (req, res) => {
@@ -89,3 +90,4 @@ module.exports = {
   add,
   destroy,
 };
+*/
